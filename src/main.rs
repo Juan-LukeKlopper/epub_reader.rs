@@ -16,7 +16,7 @@ use std::io;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
-struct Args {
+pub struct Args {
     /// Path of the epub file
     #[arg(short, long)]
     path: String,
@@ -122,10 +122,7 @@ impl Widget for &App {
             Line::from(vec!["Path: ".into(), self.path.clone().yellow()]),
         ]);
 
-        Paragraph::new(counter_text)
-            .centered()
-            .block(block)
-            .render(area, buf);
+        Paragraph::new(counter_text).block(block).render(area, buf);
     }
 }
 
