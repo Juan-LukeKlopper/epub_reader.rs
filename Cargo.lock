@@ -324,20 +324,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ebook_reader"
-version = "0.1.0"
-dependencies = [
- "clap",
- "crossterm",
- "epub",
- "ratatui",
- "rayon",
- "scraper",
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "ego-tree"
 version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -360,6 +346,20 @@ dependencies = [
  "thiserror",
  "xml-rs",
  "zip",
+]
+
+[[package]]
+name = "epub_reader_cli"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "crossterm",
+ "epub",
+ "ratatui",
+ "rayon",
+ "scraper",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
