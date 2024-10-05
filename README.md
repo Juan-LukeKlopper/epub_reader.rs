@@ -55,6 +55,10 @@ OPTIONS:
 - **M**: Show the document metadata.
 - **Q**: Quit the reader.
 
+### **Demo**
+
+[![asciicast](https://asciinema.org/a/dJTP1vVIyIAcRBRl0FRXpydBh.svg)](https://asciinema.org/a/dJTP1vVIyIAcRBRl0FRXpydBh)
+
 ## **How it Works**
 
 ### **CLI Design**
