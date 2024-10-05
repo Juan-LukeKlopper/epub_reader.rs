@@ -333,6 +333,8 @@ dependencies = [
  "ratatui",
  "rayon",
  "scraper",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -995,6 +997,18 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "serde_json"
+version = "1.0.128"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6ff5456707a1de34e7e37f2a6fd3d3f808c318259cbd01ab6377795054b483d8"
+dependencies = [
+ "itoa",
+ "memchr",
+ "ryu",
+ "serde",
 ]
 
 [[package]]
