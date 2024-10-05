@@ -24,18 +24,29 @@ struct Args {
     /// words per minute used to calculate estimated reading time
     /// 238 is the Adult Average Reading Speed so is a sensible default
     #[arg(short, long, default_value_t = 238)]
-    word_count: u16,
+    words_per_minute: u16,
 }
 
 #[derive(Debug, Default)]
 pub struct App {
-    page: u8,
+    page: u16,
+    path: String,
+    wpm: u16,
     exit: bool,
 }
 
 impl App {
     /// runs the application's main loop until the user quits
-    pub fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
+    pub fn run(
+        &mut self,
+        terminal: &mut DefaultTerminal,
+        Args {
+            path,
+            words_per_minute,
+        }: Args,
+    ) -> io::Result<()> {
+        self.path = path;
+        self.wpm = words_per_minute;
         while !self.exit {
             terminal.draw(|frame| self.draw(frame))?;
             self.handle_events()?;
@@ -106,10 +117,10 @@ impl Widget for &App {
             )
             .border_set(border::THICK);
 
-        let counter_text = Text::from(vec![Line::from(vec![
-            "Page: ".into(),
-            self.page.to_string().yellow(),
-        ])]);
+        let counter_text = Text::from(vec![
+            Line::from(vec!["Page: ".into(), self.page.to_string().yellow()]),
+            Line::from(vec!["Path: ".into(), self.path.clone().yellow()]),
+        ]);
 
         Paragraph::new(counter_text)
             .centered()
@@ -124,7 +135,7 @@ fn main() -> io::Result<()> {
     println!("args = {:?}", args);
     let mut terminal = ratatui::init();
     terminal.clear()?;
-    let app_result = App::default().run(&mut terminal);
+    let app_result = App::default().run(&mut terminal, args);
     ratatui::restore();
     app_result
 }
