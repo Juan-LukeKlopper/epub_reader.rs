@@ -13,6 +13,7 @@ use ratatui::{
     },
     DefaultTerminal, Frame,
 };
+use rayon::prelude::*;
 use scraper::{Html, Selector};
 use std::io;
 
