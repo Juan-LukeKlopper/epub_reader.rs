@@ -9,10 +9,11 @@ use ratatui::{
     text::{Line, Text},
     widgets::{
         block::{Position, Title},
-        Block, Paragraph, Widget,
+        Block, Paragraph, Widget, Wrap,
     },
     DefaultTerminal, Frame,
 };
+use scraper::{Html, Selector};
 use std::io;
 
 #[derive(Parser, Debug)]
@@ -30,10 +31,27 @@ pub struct Args {
 
 #[derive(Debug, Default)]
 pub struct App {
+    content: Vec<String>,
+    text: String,
     page: u16,
     path: String,
     wpm: u16,
     exit: bool,
+}
+
+pub fn extract_text_from_xhtml(xhtml: &str) -> String {
+    let document = Html::parse_document(xhtml);
+
+    // Select the body of the HTML document
+    let selector = Selector::parse("body").unwrap();
+    let mut text = String::new();
+
+    for element in document.select(&selector) {
+        // Instead of joining with spaces, we join with newlines to preserve formatting
+        text.push_str(&element.text().collect::<Vec<_>>().join("\n"));
+    }
+
+    text
 }
 
 impl App {
@@ -46,19 +64,17 @@ impl App {
             words_per_minute,
         }: Args,
     ) -> io::Result<()> {
-        self.path = path.clone();
-        self.wpm = words_per_minute;
-        let mut epub = EpubDoc::new(&path).unwrap();
-        println!(
-            "Metadata: {:?}\n\nTable of centent: {:?}\n\nNum of pages: {:?} \n\n current page: {:?} \n\n spine: {:?} current string: {:?} ",
-            epub.metadata.clone(),
-            epub.toc.clone(),
-            epub.get_num_pages(),
-            epub.get_current_page(),
-            epub.spine.clone(),
-            epub.get_current_str().unwrap(),
-        );
+        let num_pages = {
+            let epub = EpubDoc::new(&path).unwrap();
+            epub.get_num_pages()
+        };
+
+        self.content = content;
+        self.text = self.content[0].clone();
+
         while !self.exit {
+            self.path = path.clone();
+            self.wpm = words_per_minute;
             terminal.draw(|frame| self.draw(frame))?;
             self.handle_events()?;
         }
@@ -98,6 +114,7 @@ impl App {
     // This will handle going to next page
     fn next_page(&mut self) {
         self.page += 1;
+        self.text = self.content[self.page as usize].clone();
     }
 
     // This will handle going to the previous page, with 0 also being the lowest possible page
@@ -105,6 +122,7 @@ impl App {
         if self.page != 0 {
             self.page -= 1;
         }
+        self.text = self.content[self.page as usize].clone();
     }
 }
 
