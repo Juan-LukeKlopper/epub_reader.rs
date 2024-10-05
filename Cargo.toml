@@ -8,3 +8,5 @@ clap = { version = "4.5.19", features = ["derive"] }
 crossterm = "0.28.1"
 epub = "2.1.2"
 ratatui = "0.28.1"
+rayon = "1.10.0"
+scraper = "0.20.0"
