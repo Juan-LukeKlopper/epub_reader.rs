@@ -9,13 +9,13 @@ use ratatui::{
     text::{Line, Text},
     widgets::{
         block::{Position, Title},
-        Block, Paragraph, Widget, Wrap,
+        Block, Borders, Clear, Paragraph, Widget, Wrap,
     },
     DefaultTerminal, Frame,
 };
 use rayon::prelude::*;
 use scraper::{Html, Selector};
-use serde::{Deserialize, Serialize};
+//use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::io;
@@ -44,6 +44,20 @@ pub struct App {
     exit: bool,
     scroll_offset: u16,
     progress: HashMap<String, u16>,
+    popup_text: Option<String>,
+}
+
+fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
+    let popup_width = r.width * percent_x / 100;
+    let popup_height = r.height * percent_y / 100;
+    let popup_x = (r.width - popup_width) / 2;
+    let popup_y = (r.height - popup_height) / 2;
+    Rect {
+        x: popup_x,
+        y: popup_y,
+        width: popup_width,
+        height: popup_height,
+    }
 }
 
 pub fn extract_text_from_xhtml(xhtml: &str) -> String {
@@ -106,6 +120,15 @@ impl App {
 
     fn draw(&self, frame: &mut Frame) {
         frame.render_widget(self, frame.area());
+
+        // If there's a popup to show, render it
+        if let Some(ref popup_text) = self.popup_text {
+            let popup_area = centered_rect(60, 20, frame.area()); // Center the popup
+            frame.render_widget(Clear, popup_area); // Clear the background behind the popup
+            let popup = Paragraph::new(popup_text.clone()) // Use popup_text here
+            .block(Block::default().title("Reading Time").borders(Borders::ALL));
+            frame.render_widget(popup, popup_area);
+        }
     }
 
     /// updates the application's state based on user input
@@ -128,6 +151,8 @@ impl App {
             KeyCode::Right => self.next_page(),
             KeyCode::Up => self.scroll_up(),
             KeyCode::Down => self.scroll_down(),
+            KeyCode::Char('s') => self.show_reading_time(),
+            KeyCode::Char('c') => self.popup_text = None,
             _ => {}
         }
     }
@@ -174,6 +199,22 @@ impl App {
         let data = serde_json::to_string(&self.progress).unwrap();
         fs::write("progress.json", data).unwrap();
     }
+
+    // Calculate the estimated reading time for the current page based on WPM
+    fn calculate_reading_time(&self) -> u32 {
+        let word_count = self.text.split_whitespace().count();
+        let reading_time = (word_count as f32 / self.wpm as f32 * 60.0).ceil() as u32;
+        reading_time
+    }
+
+    // Show the estimated reading time for the current page
+    fn show_reading_time(&mut self) {
+        let reading_time = self.calculate_reading_time();
+        self.popup_text = Some(format!(
+            "Estimated reading time: {} seconds (WPM: {}) \n\n\n Press <C> to close pop-up!",
+            reading_time, self.wpm
+        ));
+    }
 }
 
 impl Widget for &App {
@@ -188,6 +229,8 @@ impl Widget for &App {
             "<Up>".blue().bold(),
             " Scroll down ".into(),
             "<Down>".blue().bold(),
+            " Bonus ".into(),
+            "<S> ".blue().bold(),
             " Quit ".into(),
             "<Q> ".blue().bold(),
         ]));
@@ -210,7 +253,7 @@ impl Widget for &App {
 
         let test_text = Text::from(text_lines);
 
-        let counter_text = Text::from(vec![
+        let _counter_text = Text::from(vec![
             Line::from(vec!["Page: ".into(), self.page.to_string().yellow()]),
             Line::from(vec!["Path: ".into(), self.path.clone().yellow()]),
             Line::from(vec!["text: ".into(), self.text.clone().yellow()]),
