@@ -128,19 +128,31 @@ impl Widget for &App {
             )
             .border_set(border::THICK);
 
+        let text_lines: Vec<Line> = self
+            .text
+            .lines() // Split text by newlines
+            .take(area.height as usize) // Take only the visible lines
+            .map(|line| Line::from(line.to_string().yellow()))
+            .collect();
+
+        let test_text = Text::from(text_lines);
+
         let counter_text = Text::from(vec![
             Line::from(vec!["Page: ".into(), self.page.to_string().yellow()]),
             Line::from(vec!["Path: ".into(), self.path.clone().yellow()]),
+            Line::from(vec!["text: ".into(), self.text.clone().yellow()]),
         ]);
 
-        Paragraph::new(counter_text).block(block).render(area, buf);
+        Paragraph::new(test_text)
+            .wrap(Wrap { trim: true })
+            .block(block)
+            .render(area, buf);
     }
 }
 
 fn main() -> io::Result<()> {
     let args = Args::parse();
 
-    println!("args = {:?}", args);
     let mut terminal = ratatui::init();
     terminal.clear()?;
     let app_result = App::default().run(&mut terminal, args);
