@@ -15,6 +15,9 @@ use ratatui::{
 };
 use rayon::prelude::*;
 use scraper::{Html, Selector};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::fs;
 use std::io;
 
 #[derive(Parser, Debug)]
@@ -35,10 +38,12 @@ pub struct App {
     content: Vec<String>,
     text: String,
     page: u16,
+    pages: u16,
     path: String,
     wpm: u16,
     exit: bool,
     scroll_offset: u16,
+    progress: HashMap<String, u16>,
 }
 
 pub fn extract_text_from_xhtml(xhtml: &str) -> String {
@@ -66,6 +71,7 @@ impl App {
             words_per_minute,
         }: Args,
     ) -> io::Result<()> {
+        self.load_progress();
         let num_pages = {
             let epub = EpubDoc::new(&path).unwrap();
             epub.get_num_pages()
@@ -83,12 +89,16 @@ impl App {
             .collect();
 
         self.content = content;
-        self.text = self.content[0].clone();
+        self.pages = num_pages as u16;
+        self.page = *self.progress.get(&path).unwrap_or(&0);
+        self.text = self.content[self.page as usize].clone();
 
         while !self.exit {
             self.path = path.clone();
             self.wpm = words_per_minute;
             terminal.draw(|frame| self.draw(frame))?;
+            self.progress.insert(self.path.clone(), self.page);
+            self.save_progress();
             self.handle_events()?;
         }
         Ok(())
@@ -128,18 +138,20 @@ impl App {
 
     // This will handle going to next page
     fn next_page(&mut self) {
-        self.page += 1;
-        self.text = self.content[self.page as usize].clone();
-        self.scroll_offset = 0;
+        if self.page != self.pages - 1 {
+            self.page += 1;
+            self.text = self.content[self.page as usize].clone();
+            self.scroll_offset = 0;
+        }
     }
 
     // This will handle going to the previous page, with 0 also being the lowest possible page
     fn previous_page(&mut self) {
         if self.page != 0 {
             self.page -= 1;
+            self.text = self.content[self.page as usize].clone();
+            self.scroll_offset = 0;
         }
-        self.text = self.content[self.page as usize].clone();
-        self.scroll_offset = 0;
     }
 
     fn scroll_up(&mut self) {
@@ -150,6 +162,17 @@ impl App {
 
     fn scroll_down(&mut self) {
         self.scroll_offset += 1;
+    }
+
+    fn load_progress(&mut self) {
+        if let Ok(data) = fs::read_to_string("progress.json") {
+            self.progress = serde_json::from_str(&data).unwrap_or_default();
+        }
+    }
+
+    fn save_progress(&self) {
+        let data = serde_json::to_string(&self.progress).unwrap();
+        fs::write("progress.json", data).unwrap();
     }
 }
 
