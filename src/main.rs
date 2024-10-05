@@ -1,5 +1,6 @@
 use clap::Parser;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
+use epub::doc::EpubDoc;
 use ratatui::{
     buffer::Buffer,
     layout::{Alignment, Rect},
@@ -45,8 +46,18 @@ impl App {
             words_per_minute,
         }: Args,
     ) -> io::Result<()> {
-        self.path = path;
+        self.path = path.clone();
         self.wpm = words_per_minute;
+        let mut epub = EpubDoc::new(&path).unwrap();
+        println!(
+            "Metadata: {:?}\n\nTable of centent: {:?}\n\nNum of pages: {:?} \n\n current page: {:?} \n\n spine: {:?} current string: {:?} ",
+            epub.metadata.clone(),
+            epub.toc.clone(),
+            epub.get_num_pages(),
+            epub.get_current_page(),
+            epub.spine.clone(),
+            epub.get_current_str().unwrap(),
+        );
         while !self.exit {
             terminal.draw(|frame| self.draw(frame))?;
             self.handle_events()?;
