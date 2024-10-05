@@ -70,6 +70,17 @@ impl App {
             epub.get_num_pages()
         };
 
+        // Process pages in parallel
+        let content: Vec<String> = (0..num_pages)
+            .into_par_iter()
+            .map(|i| {
+                // Open a new instance of EpubDoc for each thread
+                let mut epub = EpubDoc::new(&path).unwrap();
+                epub.set_current_page(i);
+                extract_text_from_xhtml(&epub.get_current_str().unwrap().0)
+            })
+            .collect();
+
         self.content = content;
         self.text = self.content[0].clone();
 
