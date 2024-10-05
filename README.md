@@ -22,9 +22,14 @@ In the digital age, reading is both an intellectual journey and a form of medita
    cargo build --release
    ```
 
-3. Run the application:
+3. Navigate to build folder:
    ```bash
-   cargo run -- --path /path/to/your/book.epub
+   cd target/release
+   ```
+
+4. Run the application:
+   ```bash
+   epub-reader-cli --path /path/to/your/book.epub
    ```
 
 ## **Usage**
@@ -47,6 +52,7 @@ OPTIONS:
 - **Left/Right Arrow**: Turn to the previous/next page.
 - **Up/Down Arrow**: Scroll through the current page.
 - **S**: Show the estimated reading time for the current page.
+- **M**: Show the document metadata.
 - **Q**: Quit the reader.
 
 ## **How it Works**
