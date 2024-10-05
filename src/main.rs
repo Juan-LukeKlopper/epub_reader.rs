@@ -45,6 +45,8 @@ pub struct App {
     scroll_offset: u16,
     progress: HashMap<String, u16>,
     popup_text: Option<String>,
+    show_metadata: Option<String>,
+    metadata: HashMap<String, Vec<String>>,
 }
 
 fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
@@ -91,6 +93,11 @@ impl App {
             epub.get_num_pages()
         };
 
+        let metadata = {
+            let epub = EpubDoc::new(&path).unwrap();
+            epub.metadata
+        };
+
         // Process pages in parallel
         let content: Vec<String> = (0..num_pages)
             .into_par_iter()
@@ -106,6 +113,7 @@ impl App {
         self.pages = num_pages as u16;
         self.page = *self.progress.get(&path).unwrap_or(&0);
         self.text = self.content[self.page as usize].clone();
+        self.metadata = metadata;
 
         while !self.exit {
             self.path = path.clone();
@@ -127,6 +135,19 @@ impl App {
             frame.render_widget(Clear, popup_area); // Clear the background behind the popup
             let popup = Paragraph::new(popup_text.clone()) // Use popup_text here
             .block(Block::default().title("Reading Time").borders(Borders::ALL));
+            frame.render_widget(popup, popup_area);
+        }
+
+        if let Some(ref show_metadata) = self.show_metadata {
+            let popup_area = centered_rect(70, 60, frame.area());
+            frame.render_widget(Clear, popup_area);
+
+            // Render the metadata popup
+            let popup = Paragraph::new(show_metadata.clone()).block(
+                Block::default()
+                    .title("Document Metadata")
+                    .borders(Borders::ALL),
+            );
             frame.render_widget(popup, popup_area);
         }
     }
@@ -152,7 +173,11 @@ impl App {
             KeyCode::Up => self.scroll_up(),
             KeyCode::Down => self.scroll_down(),
             KeyCode::Char('s') => self.show_reading_time(),
-            KeyCode::Char('c') => self.popup_text = None,
+            KeyCode::Char('c') => {
+                self.popup_text = None;
+                self.show_metadata = None;
+            }
+            KeyCode::Char('m') => self.show_metadata(),
             _ => {}
         }
     }
@@ -215,6 +240,21 @@ impl App {
             reading_time, self.wpm
         ));
     }
+
+    fn show_metadata(&mut self) {
+        let metadata_str = self.format_metadata();
+        self.show_metadata = Some(metadata_str);
+    }
+
+    // Helper function to format the metadata as a string
+    fn format_metadata(&self) -> String {
+        let mut result = String::new();
+        for (key, values) in &self.metadata {
+            result.push_str(&format!("\n {}:  {}\n", key, values.join(", ")));
+        }
+        result.push_str(&format!("\n\n\nPress <C> to close pop-up!"));
+        result
+    }
 }
 
 impl Widget for &App {
@@ -231,6 +271,8 @@ impl Widget for &App {
             "<Down>".blue().bold(),
             " Bonus ".into(),
             "<S> ".blue().bold(),
+            " Metadata ".into(),
+            "<M> ".blue().bold(),
             " Quit ".into(),
             "<Q> ".blue().bold(),
         ]));
