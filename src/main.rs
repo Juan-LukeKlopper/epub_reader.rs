@@ -38,6 +38,7 @@ pub struct App {
     path: String,
     wpm: u16,
     exit: bool,
+    scroll_offset: u16,
 }
 
 pub fn extract_text_from_xhtml(xhtml: &str) -> String {
@@ -115,6 +116,8 @@ impl App {
             KeyCode::Char('q') => self.exit(),
             KeyCode::Left => self.previous_page(),
             KeyCode::Right => self.next_page(),
+            KeyCode::Up => self.scroll_up(),
+            KeyCode::Down => self.scroll_down(),
             _ => {}
         }
     }
@@ -127,6 +130,7 @@ impl App {
     fn next_page(&mut self) {
         self.page += 1;
         self.text = self.content[self.page as usize].clone();
+        self.scroll_offset = 0;
     }
 
     // This will handle going to the previous page, with 0 also being the lowest possible page
@@ -135,6 +139,17 @@ impl App {
             self.page -= 1;
         }
         self.text = self.content[self.page as usize].clone();
+        self.scroll_offset = 0;
+    }
+
+    fn scroll_up(&mut self) {
+        if self.scroll_offset > 0 {
+            self.scroll_offset -= 1;
+        }
+    }
+
+    fn scroll_down(&mut self) {
+        self.scroll_offset += 1;
     }
 }
 
@@ -146,6 +161,10 @@ impl Widget for &App {
             "<Left>".blue().bold(),
             " Next page ".into(),
             "<Right>".blue().bold(),
+            " Scroll up ".into(),
+            "<Up>".blue().bold(),
+            " Scroll down ".into(),
+            "<Down>".blue().bold(),
             " Quit ".into(),
             "<Q> ".blue().bold(),
         ]));
@@ -161,6 +180,7 @@ impl Widget for &App {
         let text_lines: Vec<Line> = self
             .text
             .lines() // Split text by newlines
+            .skip(self.scroll_offset as usize) // Skip lines based on scroll_offset
             .take(area.height as usize) // Take only the visible lines
             .map(|line| Line::from(line.to_string().yellow()))
             .collect();
