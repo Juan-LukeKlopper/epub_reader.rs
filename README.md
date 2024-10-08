@@ -73,3 +73,22 @@ Your progress is saved after each page flip. The application maintains a JSON fi
 ### **Parallel Processing**
 The reader uses the **Rayon** crate to speed up EPUB processing by leveraging parallelism. This ensures that even large books are loaded quickly, giving you an efficient and responsive reading experience.
 
+## Documentation
+
+### Generate Documentation Locally
+The project is well-documented using Rustdoc comments. You can generate the documentation using Cargo's built-in tools.
+
+1. **Generate the documentation**:
+   Run the following command to generate the project documentation in HTML format:
+   ```bash
+   cargo doc --open
+   ```
+
+This will open the generated documentation in your web browser.
+
+2. **View Documentation Without Building**: 
+   You can also view the documentation for external crates (dependencies) without building them by running:
+   ```bash
+   cargo doc --open --no-deps
+   ```
+

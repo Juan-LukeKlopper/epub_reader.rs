@@ -15,11 +15,11 @@ use ratatui::{
 };
 use rayon::prelude::*;
 use scraper::{Html, Selector};
-//use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::io;
 
+/// CLI arguments using Clap for command-line parsing
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 pub struct Args {
@@ -33,6 +33,7 @@ pub struct Args {
     words_per_minute: u16,
 }
 
+/// Main application state structure
 #[derive(Debug, Default)]
 pub struct App {
     content: Vec<String>,
@@ -49,6 +50,8 @@ pub struct App {
     metadata: HashMap<String, Vec<String>>,
 }
 
+/// Helper function to center a popup in the terminal
+/// Calculates the centered rectangle based on percentage of screen width and height
 fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
     let popup_width = r.width * percent_x / 100;
     let popup_height = r.height * percent_y / 100;
@@ -78,7 +81,8 @@ pub fn extract_text_from_xhtml(xhtml: &str) -> String {
 }
 
 impl App {
-    /// runs the application's main loop until the user quits
+    /// Runs the application's main loop until the user quits
+    /// Loads the epub file, processes the pages, and manages user input
     pub fn run(
         &mut self,
         terminal: &mut DefaultTerminal,
@@ -126,6 +130,7 @@ impl App {
         Ok(())
     }
 
+    /// Draws the UI for the current application state
     fn draw(&self, frame: &mut Frame) {
         frame.render_widget(self, frame.area());
 
@@ -186,7 +191,7 @@ impl App {
         self.exit = true;
     }
 
-    // This will handle going to next page
+    /// This will handle going to next page, if not alreadt at the last page
     fn next_page(&mut self) {
         if self.page != self.pages - 1 {
             self.page += 1;
@@ -195,7 +200,7 @@ impl App {
         }
     }
 
-    // This will handle going to the previous page, with 0 also being the lowest possible page
+    /// This will handle going to the previous page, with 0 also being the lowest possible page
     fn previous_page(&mut self) {
         if self.page != 0 {
             self.page -= 1;
@@ -204,35 +209,39 @@ impl App {
         }
     }
 
+    /// Scroll up on the current page by decreasing the scroll offset, if not at top of page
     fn scroll_up(&mut self) {
         if self.scroll_offset > 0 {
             self.scroll_offset -= 1;
         }
     }
 
+    /// Scroll down on the current page by increasing the scroll offset
     fn scroll_down(&mut self) {
         self.scroll_offset += 1;
     }
 
+    /// Loads progress from a file
     fn load_progress(&mut self) {
         if let Ok(data) = fs::read_to_string("progress.json") {
             self.progress = serde_json::from_str(&data).unwrap_or_default();
         }
     }
 
+    /// Saves progress to a file
     fn save_progress(&self) {
         let data = serde_json::to_string(&self.progress).unwrap();
         fs::write("progress.json", data).unwrap();
     }
 
-    // Calculate the estimated reading time for the current page based on WPM
+    /// Calculate the estimated reading time for the current page based on WPM
     fn calculate_reading_time(&self) -> u32 {
         let word_count = self.text.split_whitespace().count();
         let reading_time = (word_count as f32 / self.wpm as f32 * 60.0).ceil() as u32;
         reading_time
     }
 
-    // Show the estimated reading time for the current page
+    /// Show the estimated reading time for the current page in a popup
     fn show_reading_time(&mut self) {
         let reading_time = self.calculate_reading_time();
         self.popup_text = Some(format!(
@@ -241,12 +250,13 @@ impl App {
         ));
     }
 
+    /// Shows the document's metadata (e.g., author, title) in a popup
     fn show_metadata(&mut self) {
         let metadata_str = self.format_metadata();
         self.show_metadata = Some(metadata_str);
     }
 
-    // Helper function to format the metadata as a string
+    /// Helper function to format the metadata as a string
     fn format_metadata(&self) -> String {
         let mut result = String::new();
         for (key, values) in &self.metadata {
