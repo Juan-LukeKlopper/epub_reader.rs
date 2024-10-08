@@ -191,7 +191,7 @@ impl App {
         self.exit = true;
     }
 
-    /// This will handle going to next page, if not alreadt at the last page
+    /// This will handle going to next page, if not already at the last page
     fn next_page(&mut self) {
         if self.page != self.pages - 1 {
             self.page += 1;
